@@ -1,7 +1,6 @@
 import dgl
 import dgl.backend as F
 from dgl.transform import metis_partition
-from dgl.dataloading import BlockSampler
 import numpy as np
 import random
 
