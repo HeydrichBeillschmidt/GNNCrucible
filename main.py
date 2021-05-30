@@ -4,17 +4,11 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
 
 from load_graph import load_data
 from models import Model
 from sampler import ClusterSampler
-
-
-def calc_f1(y_true, y_pred):
-    y_pred = np.argmax(y_pred, axis=1)
-    return f1_score(y_true, y_pred, average="micro"), \
-        f1_score(y_true, y_pred, average="macro")
 
 
 def evaluate(model, g, labels, mask):
@@ -22,10 +16,11 @@ def evaluate(model, g, labels, mask):
     with torch.no_grad():
         logits = model(g, g.ndata['feat'])
         logits = logits[mask]
+        logits = logits.cpu().numpy()
+        logits = np.argmax(logits, axis=-1)
         labels = labels[mask]
-        f1_mic, f1_mac = calc_f1(labels.cpu().numpy(),
-                                 logits.cpu().numpy())
-        return f1_mic, f1_mac
+        labels = labels.cpu().numpy()
+        return accuracy_score(labels, logits)
 
 
 def train(model, g, loss_f, optimizer, cuda):
@@ -122,7 +117,7 @@ def run(args):
         print("current memory after model before training",
               torch.cuda.memory_allocated(device=train_nid.device) / 1024 / 1024)
     start_time = time.time()
-    best_f1 = -1
+    best_acc = -1
 
     for epoch in range(args.n_epochs):
         if enable_cluster:
@@ -133,19 +128,17 @@ def run(args):
 
         # evaluate
         if epoch % args.val_every == 0:
-            print("In epoch:", epoch)
-            val_f1_mic, val_f1_mac = evaluate(model, g, labels, val_mask)
-            print("Val F1-mic {:.4f}, Val F1-mac {:.4f}". format(val_f1_mic, val_f1_mac))
-            if val_f1_mic > best_f1:
-                best_f1 = val_f1_mic
-                print('new best val f1: {:.4f}'.format(best_f1))
+            val_acc = evaluate(model, g, labels, val_mask)
+            if val_acc > best_acc:
+                best_acc = val_acc
+            print("In epoch {}, val acc {:.4f}(best {:.4f})".format(epoch, val_acc, best_acc))
 
     end_time = time.time()
     print('training using time {:.4f}'.format(end_time-start_time))
 
     # test
-    test_f1_mic, test_f1_mac = evaluate(model, g, labels, test_mask)
-    print("Test F1-mic{:.4f}, Test F1-mac{:.4f}". format(test_f1_mic, test_f1_mac))
+    test_acc = evaluate(model, g, labels, test_mask)
+    print("Test acc {:.4f}".format(test_acc))
 
 
 if __name__ == '__main__':
