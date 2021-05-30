@@ -135,13 +135,13 @@ def run(args):
         if epoch % args.val_every == 0:
             print("In epoch:", epoch)
             val_f1_mic, val_f1_mac = evaluate(model, g, labels, val_mask)
-            print("Val F1-mic{:.4f}, Val F1-mac{:.4f}". format(val_f1_mic, val_f1_mac))
+            print("Val F1-mic {:.4f}, Val F1-mac {:.4f}". format(val_f1_mic, val_f1_mac))
             if val_f1_mic > best_f1:
                 best_f1 = val_f1_mic
-                print('new best val f1:', best_f1)
+                print('new best val f1: {:.4f}'.format(best_f1))
 
     end_time = time.time()
-    print(f'training using time {start_time-end_time}')
+    print('training using time {:.4f}'.format(end_time-start_time))
 
     # test
     test_f1_mic, test_f1_mac = evaluate(model, g, labels, test_mask)
@@ -159,8 +159,6 @@ if __name__ == '__main__':
                         help="learning rate")
     parser.add_argument("--n-epochs", type=int, default=200,
                         help="number of training epochs")
-    parser.add_argument("--log-every", type=int, default=100,
-                        help="the frequency to save model")
     parser.add_argument("--batch-size", type=int, default=2,
                         help="batch size")
     parser.add_argument("--psize", type=int, default=16,
@@ -173,8 +171,6 @@ if __name__ == '__main__':
                         help="number of epoch of doing inference on validation")
     parser.add_argument("--rnd-seed", type=int, default=3,
                         help="number of epoch of doing inference on validation")
-    parser.add_argument("--use-val", action='store_true',
-                        help="whether to use validated best model to test")
     parser.add_argument("--weight-decay", type=float, default=5e-4,
                         help="Weight for L2 loss")
 
